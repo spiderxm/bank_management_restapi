@@ -14,9 +14,10 @@ mydb = pymysql.connect(
 )
 
 try:
+    # creating cursor
     mycursor = mydb.cursor()
 except:
-    print("Error")
+    print("Error creating cursor")
 
 
 # get route to get details of all the account holders
@@ -111,6 +112,7 @@ def passbook(account_number):
                         status=200)
 
 
+# get route to get details of all the transactions
 @app.route("/transactiondetails")
 def details():
     try:
@@ -138,16 +140,6 @@ def details():
             "status": "failure",
             "error": "error finding history of transactions"
         })
-
-
-@app.route("/deposit/<account_number>", methods=['POST'])
-def deposit(account_number):
-    print("deposit money")
-
-
-@app.route("/withdrawal/<account_number>", methods=['POST'])
-def withdrawal(account_number):
-    print("withdraw amount")
 
 
 # get route to get total number of account holder and type of account holder
@@ -222,6 +214,64 @@ def money_details():
         return jsonify({
             "status_code": 200,
             "error": "error getting transaction details"
+        })
+
+
+# post request to deposit money in your bank account
+@app.route("/deposit", methods=['POST'])
+def deposit():
+    print("deposit money")
+    account_number = request.form['account_number']
+    amount = request.form['amount']
+    if amount and account_number:
+        print("account_number", account_number)
+        print("amount", amount)
+    else:
+        return jsonify({
+            "error": "Please send account number and amount both",
+            "status_code": 200
+        })
+
+
+# post request to withdraw money from your bank account
+@app.route("/withdrawal", methods=['POST'])
+def withdrawal(account_number):
+    account_number = request.form['account_number']
+    amount = request.form['amount']
+    if amount and account_number:
+        print("account_number", account_number)
+        print("amount", amount)
+    else:
+        return jsonify({
+            "error": "Please send account number and amount both",
+            "status_code": 200
+        })
+    print("withdraw amount")
+
+
+# post request to create account
+@app.route("/createuser", methods=['POST'])
+def create_user():
+    print("create user")
+
+
+# post request to transfer money from one account to other account
+@app.route("/transfer", methods=['POST'])
+def transfer():
+    account_number = request.form['account_number']
+    amount = request.form['amount']
+    your_account_number = request.form['your_account_number']
+    if amount and account_number and your_account_number:
+        print("Amount", amount)
+        print("Account_number", account_number)
+        print("Your account number", your_account_number)
+        return jsonify({
+            "status": 200
+        })
+    else:
+        return jsonify({
+            "status": 200,
+            "error": "please provide all the fields"
         })
 
 
