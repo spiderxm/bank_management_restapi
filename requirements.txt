@@ -1,4 +1,4 @@
 Flask
-flask_restful
 uwsgi
 pymysql
+gunicorn
