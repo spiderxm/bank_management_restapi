@@ -149,7 +149,7 @@ def deposit(account_number):
 def withdrawal(account_number):
     print("withdraw amount")
 
-
+# get route to get total number of account holder and type of account holder
 @app.route("/account-type-details")
 def account_type_details():
     query = "SELECT COUNT(*) AS users FROM account_holder"
@@ -168,21 +168,18 @@ def account_type_details():
             mycursor.execute(query1)
             users = mycursor.fetchone()
             users = users['users']
-            details = []
             details.append({
                 "total_number_of_lite_users": users
             })
             mycursor.execute(query2)
             users = mycursor.fetchone()
             users = users['users']
-            details = []
             details.append({
                 "total_number_of_elite_users": users
             })
             mycursor.execute(query3)
             users = mycursor.fetchone()
             users = users['users']
-            details = []
             details.append({
                 "total_number_of_executive_users": users
             })
@@ -194,6 +191,7 @@ def account_type_details():
         print("error")
         return jsonify({"Status": "failure", "status_code": 200})
 
+#get route to show details related to money in the bank
 
 if __name__ == '__main__':
     app.run()
