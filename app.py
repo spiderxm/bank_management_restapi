@@ -18,6 +18,7 @@ try:
 except:
     print("Error")
 
+
 # get route to get details of all the account holders
 @app.route('/users')
 def hello_world():
@@ -44,11 +45,36 @@ def hello_world():
         return jsonify(records)
     except:
         print("Error")
-        return {"status_code": 400}
+        return jsonify({"status": 'failure',
+                        "reason": 'error fetching records',
+                        "status_code": 400})
 
 
-# @app.route('/create_user', methods=['POST'])
-# def create_user:
+# get route to get the balance of a particular account number
+@app.route("/balance/<account_number>")
+def get_balance(account_number):
+    query = "Select balance from account_balance where account_number = '{}'".format(account_number)
+    try:
+        mycursor.execute(query)
+        a = mycursor.fetchone()
+        print(a)
+        if a:
+            result = {
+                "account_number": account_number,
+                "current_balance": float(a['balance']),
+                "status_code": 200
+            }
+            return jsonify(result)
+        else:
+            return jsonify({"status": 'failure',
+                            "reason": 'error account number does not exist',
+                            "status_code": 400})
+    except:
+        return jsonify({"status": 'failure',
+                        "reason": 'error querying table',
+                        "status_code": 400})
+
+
 
 
 if __name__ == '__main__':
