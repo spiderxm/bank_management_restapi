@@ -425,7 +425,7 @@ def transfer():
             "status_code": 200
         })
     mycursor.execute(
-        "SELECT account_number FROM account_holder WHERE account_number = '{}'".format(your_account_number))
+        "SELECT account_number FROM account_holder WHERE account_number = '{}'".format(account_number))
     account_number_ = mycursor.fetchone()
     if account_number_:
         print("Valid account number")
@@ -434,10 +434,15 @@ def transfer():
             "error": "account_number_invalid",
             "status_code": 200
         })
+    if amount <= 0:
+        return jsonify({
+            "error": "transaction amount is equal to zero or less tham zero",
+            "status_code": 200
+        })
     try:
         query = "SELECT balance FROM account_balance WHERE account_number = '{}'".format(your_account_number)
         mycursor.execute(query)
-        balance = mycursor.fetchone()[0]
+        balance = mycursor.fetchone()['balance']
         balance = float(balance)
         if balance >= amount:
             balance_new = balance - amount
@@ -466,7 +471,7 @@ def transfer():
             try:
                 query = "SELECT balance FROM account_balance WHERE account_number = '{}'".format(account_number)
                 mycursor.execute(query)
-                new_balance = float(mycursor.fetchone()[0])
+                new_balance = float(mycursor.fetchone()['balance'])
             except:
                 return jsonify({
                     "error": "error selecting balance",
@@ -504,10 +509,14 @@ def transfer():
                 })
             return jsonify({
                 "message": "transaction successfull",
+                "comments": "money successfully transfered",
                 "status_code": 200
             })
         else:
-            print("Insufficient funds in your bank account")
+            return jsonify({
+                "error": "insufficient funds in your account please try again later",
+                "status_code": 200
+            })
     except:
         print("Error in getting balance")
 
