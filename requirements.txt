@@ -2,5 +2,3 @@ Flask
 flask_restful
 uwsgi
 pymysql
-json
-random
