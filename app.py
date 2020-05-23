@@ -149,6 +149,7 @@ def deposit(account_number):
 def withdrawal(account_number):
     print("withdraw amount")
 
+
 # get route to get total number of account holder and type of account holder
 @app.route("/account-type-details")
 def account_type_details():
@@ -191,7 +192,38 @@ def account_type_details():
         print("error")
         return jsonify({"Status": "failure", "status_code": 200})
 
-#get route to show details related to money in the bank
+
+# get route to show details related to money in the bank
+@app.route('/money-details')
+def money_details():
+    query = "SELECT SUM(balance) as total_money FROM account_balance"
+    query1 = "SELECT Count(*) as total_users FROM account_balance"
+    query2 = "SELECT balance as min_balance FROM account_balance ORDER BY balance limit 1"
+    query3 = "SELECT balance as max_balance FROM account_balance ORDER BY balance DESC limit 1"
+    try:
+        mycursor.execute(query)
+        amount = mycursor.fetchone()
+        amount = float(amount['total_money'])
+        mycursor.execute(query1)
+        users = mycursor.fetchone()
+        users = users['total_users']
+        mycursor.execute(query2)
+        minimum = float(mycursor.fetchone()['min_balance'])
+        mycursor.execute(query3)
+        maximum = float(mycursor.fetchone()['max_balance'])
+        return jsonify({
+            "average money per bank account": amount,
+            "total money in bank": amount / users,
+            "minimum money in a account": minimum,
+            "maximum money in a bank account": maximum
+
+        })
+    except:
+        return jsonify({
+            "status_code": 200,
+            "error": "error getting transaction details"
+        })
+
 
 if __name__ == '__main__':
     app.run()
