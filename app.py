@@ -1,3 +1,4 @@
+# Rest Api for bank management implementation
 from flask import Flask, request, jsonify, Response
 import pymysql.cursors
 import json
@@ -357,18 +358,53 @@ def create_user():
     address = data['address']
     phone_number = data['phone_number']
     account_type = data['account_type']
-    initial_deposit = data['amount']
-    if account_holder_name and email and address and phone_number and account_type and initial_deposit:
-        account_number = str(randint(100 ** 9, (100 ** 10) - 1))
-        print(account_number)
-        return jsonify({
-            "status": 200,
-            "message": "bank account created",
-            "account_number": account_number
-        })
+    amount = data['amount']
+    account_number = str(randint(100 ** 9, (100 ** 10) - 1))
+    if len(account_holder_name) > 0 and len(address) > 2 and len(phone_number) > 0 and len(account_type) > 0 and len(
+            email) > 3 and float(amount) > 0:
+        try:
+            query = "INSERT INTO account_holder(account_holder, email, address, phone_number, account_number, account_type, amount) VALUES" \
+                    "('{}','{}','{}','{}','{}','{}',{})".format(account_holder_name, email, address, phone_number,
+                                                                account_number, account_type, float(amount))
+            print(query)
+            mycursor.execute(query)
+            try:
+                query = "INSERT INTO account_balance(account_number, balance) VALUES " \
+                        "('{}', {})".format(account_number, amount)
+                mycursor.execute(query)
+                try:
+                    query = "INSERT INTO account_history(account_number, payment_type, balance_before, balance_afterwards, comments) values " \
+                            "('{}', 'deposit', 0, {}, 'Deposit made on account opening')".format(account_number, amount)
+                    mycursor.execute(query)
+                    print("Your Account has been successfully created")
+                    return jsonify({
+                        "message": "Your Account is successfully created",
+                        "account_number": account_number,
+                        "status_code": 200,
+                        "message": "Keep this Account Number safe as it is very important and will be used for further transactions"
+                    })
+
+                except:
+                    return jsonify({
+                        "error": "Error updating deposit for your account in the ledger",
+                        "status_code": 200
+                    })
+            except:
+                return jsonify({
+                    "error": "Error updating balance in your new account",
+                    "status_code": 200
+                })
+
+        except:
+            return jsonify({
+                "error": "There was some error in creating you account please try again later",
+                "status_code": 200
+            })
     else:
-        return jsonify({"status": 200,
-                        "error": "please send all the needed fields"})
+        return jsonify({
+            "error": "",
+            "status_code": 200
+        })
 
 
 # post request to transfer money from one account to other account
@@ -378,18 +414,102 @@ def transfer():
     account_number = data['account_number']
     amount = data['amount']
     your_account_number = data['your_account_number']
-    if amount and account_number and your_account_number:
-        print("Amount", amount)
-        print("Account_number", account_number)
-        print("Your account number", your_account_number)
-        return jsonify({
-            "status": 200
-        })
+    mycursor.execute(
+        "SELECT account_number FROM account_holder WHERE account_number = '{}'".format(your_account_number))
+    account_number_ = mycursor.fetchone()
+    if account_number_:
+        print("Valid account number")
     else:
         return jsonify({
-            "status": 200,
-            "error": "please provide all the fields"
+            "error": "your_account_number_invalid",
+            "status_code": 200
         })
+    mycursor.execute(
+        "SELECT account_number FROM account_holder WHERE account_number = '{}'".format(your_account_number))
+    account_number_ = mycursor.fetchone()
+    if account_number_:
+        print("Valid account number")
+    else:
+        return jsonify({
+            "error": "account_number_invalid",
+            "status_code": 200
+        })
+    try:
+        query = "SELECT balance FROM account_balance WHERE account_number = '{}'".format(your_account_number)
+        mycursor.execute(query)
+        balance = mycursor.fetchone()[0]
+        balance = float(balance)
+        if balance >= amount:
+            balance_new = balance - amount
+            try:
+                query = "UPDATE account_balance SET balance = {} WHERE account_number = '{}'".format(balance_new,
+                                                                                                     your_account_number)
+                mycursor.execute(query)
+                mydb.commit()
+            except:
+                return jsonify({
+                    "error": "error updating balance",
+                    "status_code": 200
+                })
+            try:
+                query = "UPDATE account_balance SET balance = balance + {} WHERE account_number = '{}'".format(
+                    amount,
+                    account_number)
+                mycursor.execute(query)
+                mydb.commit()
+            except:
+                return jsonify({
+                    "error": "error updating balance",
+                    "status_code": 200
+                })
+            new_balance = 0
+            try:
+                query = "SELECT balance FROM account_balance WHERE account_number = '{}'".format(account_number)
+                mycursor.execute(query)
+                new_balance = float(mycursor.fetchone()[0])
+            except:
+                return jsonify({
+                    "error": "error selecting balance",
+                    "status_code": 200
+                })
+            try:
+                query = "INSERT INTO account_history(account_number, payment_type, balance_before, balance_afterwards, comments) values" \
+                        "({}, 'withdraw', {}, {}, 'Money transferred {} to account_number {}')".format(
+                    your_account_number,
+                    balance,
+                    balance_new,
+                    amount,
+                    account_number)
+                mycursor.execute(query)
+                mydb.commit()
+            except:
+                return jsonify({
+                    "error": "error creating transaction",
+                    "status_code": 200
+                })
+            try:
+                query = "INSERT INTO account_history(account_number, payment_type, balance_before, balance_afterwards, comments) values" \
+                        "({}, 'deposit', {}, {}, 'Money recieived {} from  account_number {}')".format(
+                    your_account_number,
+                    new_balance - amount,
+                    new_balance,
+                    amount,
+                    account_number)
+                mycursor.execute(query)
+                mydb.commit()
+            except:
+                return jsonify({
+                    "error": "error updating balance",
+                    "status_code": 200
+                })
+            return jsonify({
+                "message": "transaction successfull",
+                "status_code": 200
+            })
+        else:
+            print("Insufficient funds in your bank account")
+    except:
+        print("Error in getting balance")
 
 
 if __name__ == '__main__':
