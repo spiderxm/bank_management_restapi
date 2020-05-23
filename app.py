@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 import pymysql.cursors
 import json
 
@@ -47,7 +47,7 @@ def hello_world():
         print("Error")
         return jsonify({"status": 'failure',
                         "reason": 'error fetching records',
-                        "status_code": 400})
+                        "status_code": 200})
 
 
 # get route to get the balance of a particular account number
@@ -68,11 +68,12 @@ def get_balance(account_number):
         else:
             return jsonify({"status": 'failure',
                             "reason": 'error account number does not exist',
-                            "status_code": 400})
+                            "status_code": 200})
     except:
         return jsonify({"status": 'failure',
                         "reason": 'error querying table',
-                        "status_code": 400})
+                        "status_code": 200})
+
 
 # get route to show all transaction details of a particular account
 @app.route('/passbook/<account_number>')
@@ -99,17 +100,99 @@ def passbook(account_number):
             return jsonify(records)
         except:
             return jsonify({
-                "status_code": 400,
+                "status_code": 200,
                 "status": "failure",
                 "error": "error finding history"
             })
 
     else:
+        return Response(json.dumps({"status": "failure account number does not exist", "status_code": "200"}),
+                        mimetype="application/json",
+                        status=200)
+
+
+@app.route("/transactiondetails")
+def details():
+    try:
+        query = "SELECT * FROM account_history ORDER BY transaction_time ASC"
+        mycursor.execute(query)
+        records = []
+        record = mycursor.fetchone()
+        transactionnumber: int = 1
+        while record:
+            r = {
+                "Transaction number": transactionnumber,
+                "Transaction type :": record['payment_type'],
+                "Balance before transaction : ": float(record['balance_before']),
+                "Balance after transaction :": float(record['balance_afterwards']),
+                "Date and time of transaction :": record['transaction_time'],
+                "Message ": record['comments']
+            }
+            records.append(r)
+            record = mycursor.fetchone()
+            transactionnumber = transactionnumber + 1
+        return jsonify(records)
+    except:
         return jsonify({
-            "status_code": 400,
+            "status_code": 200,
             "status": "failure",
-            "error": "account_number does not exist"
+            "error": "error finding history of transactions"
         })
+
+
+@app.route("/deposit/<account_number>", methods=['POST'])
+def deposit(account_number):
+    print("deposit money")
+
+
+@app.route("/withdrawal/<account_number>", methods=['POST'])
+def withdrawal(account_number):
+    print("withdraw amount")
+
+
+@app.route("/account-type-details")
+def account_type_details():
+    query = "SELECT COUNT(*) AS users FROM account_holder"
+    try:
+        mycursor.execute(query)
+        users = mycursor.fetchone()
+        users = users['users']
+        details = []
+        details.append({
+            "total_number_of_users": users
+        })
+        query1 = "SELECT COUNT(*) AS users FROM account_holder where account_type = 'lite'"
+        query2 = "SELECT COUNT(*) AS users FROM account_holder where account_type = 'elite'"
+        query3 = "SELECT COUNT(*) AS users FROM account_holder where account_type = 'executive'"
+        try:
+            mycursor.execute(query1)
+            users = mycursor.fetchone()
+            users = users['users']
+            details = []
+            details.append({
+                "total_number_of_lite_users": users
+            })
+            mycursor.execute(query2)
+            users = mycursor.fetchone()
+            users = users['users']
+            details = []
+            details.append({
+                "total_number_of_elite_users": users
+            })
+            mycursor.execute(query3)
+            users = mycursor.fetchone()
+            users = users['users']
+            details = []
+            details.append({
+                "total_number_of_executive_users": users
+            })
+            return jsonify(details)
+        except:
+            return jsonify({"Status": "failure", "status_code": 200})
+
+    except:
+        print("error")
+        return jsonify({"Status": "failure", "status_code": 200})
 
 
 if __name__ == '__main__':
