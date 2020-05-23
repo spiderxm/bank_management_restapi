@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, Response
 import pymysql.cursors
 import json
+from random import randint
 
 app = Flask(__name__)
 
@@ -218,49 +219,165 @@ def money_details():
 
 
 # post request to deposit money in your bank account
-@app.route("/deposit", methods=['POST'])
+@app.route('/deposit', methods=["POST"])
 def deposit():
-    print("deposit money")
-    account_number = request.form['account_number']
-    amount = request.form['amount']
-    if amount and account_number:
-        print("account_number", account_number)
-        print("amount", amount)
-    else:
+    data = request.json
+    print(data)
+    account_number = data['account_number']
+    amount = float(data['amount'])
+    query = "SELECT account_number from account_holder where account_number = '{}'".format(account_number)
+    try:
+        mycursor.execute(query)
+        account = mycursor.fetchone()
+        if account:
+            if amount > 0 and account_number:
+                print("account_number", account_number)
+                print("amount", amount)
+                query = "SELECT balance from account_balance where account_number = '{}'".format(account_number)
+                mycursor.execute(query)
+                balance = mycursor.fetchone()
+                balance = float(balance['balance'])
+                final_amount = amount + balance
+                query = "UPDATE account_balance SET balance = {} where account_number = '{}'".format(final_amount,
+                                                                                                     account_number)
+                try:
+                    mycursor.execute(query)
+                    query = "INSERT INTO account_history(account_number, payment_type, balance_before, balance_afterwards, comments) values" \
+                            "({}, 'deposit', {}, {}, 'Deposit made in account')".format(account_number, balance,
+                                                                                        final_amount)
+                    try:
+                        mycursor.execute(query)
+                        return jsonify({
+                            "message": "Deposit record successfully added",
+                            "status_code": "200"
+                        })
+                    except:
+                        print("Error")
+                except:
+                    print("Error")
+                return jsonify({
+                    "message": "money deposited",
+                    "status_code": 200
+                })
+            else:
+                return jsonify({
+                    "error": "Please send account number and amount both amount should be greater than zero",
+                    "status_code": 200
+                })
+        else:
+            return jsonify({
+                "status_code": 200,
+                "error": "account number incorrect"
+            })
+    except:
         return jsonify({
-            "error": "Please send account number and amount both",
+            "error": "error fetching records",
             "status_code": 200
         })
 
 
 # post request to withdraw money from your bank account
 @app.route("/withdrawal", methods=['POST'])
-def withdrawal(account_number):
-    account_number = request.form['account_number']
-    amount = request.form['amount']
-    if amount and account_number:
-        print("account_number", account_number)
-        print("amount", amount)
-    else:
+def withdrawal():
+    data = request.json
+    account_number = data['account_number']
+    amount = data['amount']
+    query = "SELECT account_number from account_holder where account_number = '{}'".format(account_number)
+    try:
+        mycursor.execute(query)
+        account = mycursor.fetchone()
+        if account:
+            if amount > 0 and account_number:
+                try:
+                    query = "SELECT balance FROM account_balance WHERE account_number = '{}'".format(account_number)
+                    mycursor.execute(query)
+                except:
+                    balance = float(mycursor.fetchone()['balance'])
+                if balance >= amount:
+                    balance_after_withdrawal = balance - amount
+                    try:
+                        query = "UPDATE account_balance SET balance = {} WHERE account_number = '{}'".format(
+                            balance_after_withdrawal,
+                            account_number)
+                        mydb.commit()
+                        mycursor.execute(query)
+                        query = "INSERT INTO account_history(account_number, payment_type, balance_before, balance_afterwards, comments) values" \
+                                "({}, 'withdraw', {}, {}, 'Withdrawal made from the account')".format(account_number,
+                                                                                                      balance,
+                                                                                                      balance_after_withdrawal)
+                        try:
+                            mycursor.execute(query)
+                            mydb.commit()
+                            return jsonify({
+                                "message": "ammount_successfully_debited",
+                                "status_code": 200,
+                                "balance_after_withdrawal": balance_after_withdrawal
+                            })
+                        except:
+                            return jsonify({
+                                "message": "error contact customer care",
+                                "status_code": 200
+                            })
+                    except:
+                        print("Error in updating balance")
+                else:
+                    print("Insufficient funds in your bank account")
+                    return jsonify({
+                        "error": "insufficient funds",
+                        "status_code": 200
+                    })
+            else:
+                print("Error")
+                return jsonify({
+                    "error": "amount should be greater than zero",
+                    "status_code": "200"
+                })
+        else:
+            print("account number invalid")
+            return jsonify({
+                "error": "invalid account number please try again with correct one",
+                "status_code": 200
+            })
+
+    except:
+        print("Error in retreiving account number")
         return jsonify({
-            "error": "Please send account number and amount both",
-            "status_code": 200
+            "message": "error",
+            "status": 200
         })
-    print("withdraw amount")
 
 
 # post request to create account
 @app.route("/createuser", methods=['POST'])
 def create_user():
-    print("create user")
+    data = request.json
+    print(data)
+    account_holder_name = data['account_holder']
+    email = data['email']
+    address = data['address']
+    phone_number = data['phone_number']
+    account_type = data['account_type']
+    initial_deposit = data['amount']
+    if account_holder_name and email and address and phone_number and account_type and initial_deposit:
+        account_number = str(randint(100 ** 9, (100 ** 10) - 1))
+        print(account_number)
+        return jsonify({
+            "status": 200,
+            "message": "bank account created",
+            "account_number": account_number
+        })
+    else:
+        return jsonify({"status": 200,
+                        "error": "please send all the needed fields"})
 
 
 # post request to transfer money from one account to other account
 @app.route("/transfer", methods=['POST'])
 def transfer():
-    account_number = request.form['account_number']
-    amount = request.form['amount']
-    your_account_number = request.form['your_account_number']
+    data = request.json
+    account_number = data['account_number']
+    amount = data['amount']
+    your_account_number = data['your_account_number']
     if amount and account_number and your_account_number:
         print("Amount", amount)
         print("Account_number", account_number)
