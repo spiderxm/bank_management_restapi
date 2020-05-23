@@ -74,7 +74,42 @@ def get_balance(account_number):
                         "reason": 'error querying table',
                         "status_code": 400})
 
+# get route to show all transaction details of a particular account
+@app.route('/passbook/<account_number>')
+def passbook(account_number):
+    mycursor.execute("SELECT account_number FROM account_holder where account_number = '{}'".format(account_number))
+    account = mycursor.fetchall()
+    if account:
+        print(account_number)
+        try:
+            query = "SELECT * FROM account_history WHERE account_number = '{}'".format(account_number)
+            mycursor.execute(query)
+            records = []
+            record = mycursor.fetchone()
+            while record:
+                r = {
+                    "Transaction type :": record['payment_type'],
+                    "Balance before transaction : ": float(record['balance_before']),
+                    "Balance after transaction :": float(record['balance_afterwards']),
+                    "Date and time of transaction :": record['transaction_time'],
+                    "Message ": record['comments']
+                }
+                records.append(r)
+                record = mycursor.fetchone()
+            return jsonify(records)
+        except:
+            return jsonify({
+                "status_code": 400,
+                "status": "failure",
+                "error": "error finding history"
+            })
 
+    else:
+        return jsonify({
+            "status_code": 400,
+            "status": "failure",
+            "error": "account_number does not exist"
+        })
 
 
 if __name__ == '__main__':
