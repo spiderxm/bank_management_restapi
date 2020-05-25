@@ -7,7 +7,7 @@ from random import randint
 app = Flask(__name__)
 
 mydb = pymysql.connect(
-    host='bank.ct1ikgzgdh96.us-east-1.rds.amazonaws.com',
+    host='******.amazonaws.com',
     user='admin',
     password='adminadmin',
     db='BANK',
