@@ -50,7 +50,7 @@ def hello_world():
         print("Error")
         return jsonify({"status": 'failure',
                         "reason": 'error fetching records',
-                        "status_code": 200})
+                        "status_code": 400})
 
 
 # get route to get the balance of a particular account number
@@ -75,7 +75,7 @@ def get_balance(account_number):
     except:
         return jsonify({"status": 'failure',
                         "reason": 'error querying table',
-                        "status_code": 200})
+                        "status_code": 400})
 
 
 # get route to show all transaction details of a particular account
@@ -111,7 +111,7 @@ def passbook(account_number):
     else:
         return Response(json.dumps({"status": "failure account number does not exist", "status_code": "200"}),
                         mimetype="application/json",
-                        status=200)
+                        status=400)
 
 
 # get route to get details of all the transactions
@@ -138,7 +138,7 @@ def details():
         return jsonify(records)
     except:
         return jsonify({
-            "status_code": 200,
+            "status_code": 400,
             "status": "failure",
             "error": "error finding history of transactions"
         })
@@ -184,7 +184,7 @@ def account_type_details():
 
     except:
         print("error")
-        return jsonify({"Status": "failure", "status_code": 200})
+        return jsonify({"Status": "failure", "status_code": 400})
 
 
 # get route to show details related to money in the bank
@@ -214,7 +214,7 @@ def money_details():
         })
     except:
         return jsonify({
-            "status_code": 200,
+            "status_code": 400,
             "error": "error getting transaction details"
         })
 
@@ -258,22 +258,22 @@ def deposit():
                     print("Error")
                 return jsonify({
                     "message": "money deposited",
-                    "status_code": 200
+                    "status_code": 400
                 })
             else:
                 return jsonify({
                     "error": "Please send account number and amount both amount should be greater than zero",
-                    "status_code": 200
+                    "status_code": 400
                 })
         else:
             return jsonify({
-                "status_code": 200,
+                "status_code": 400,
                 "error": "account number incorrect"
             })
     except:
         return jsonify({
             "error": "error fetching records",
-            "status_code": 200
+            "status_code": 400
         })
 
 
@@ -317,7 +317,7 @@ def withdrawal():
                         except:
                             return jsonify({
                                 "message": "error contact customer care",
-                                "status_code": 200
+                                "status_code": 400
                             })
                     except:
                         print("Error in updating balance")
@@ -325,26 +325,26 @@ def withdrawal():
                     print("Insufficient funds in your bank account")
                     return jsonify({
                         "error": "insufficient funds",
-                        "status_code": 200
+                        "status_code": 400
                     })
             else:
                 print("Error")
                 return jsonify({
                     "error": "amount should be greater than zero",
-                    "status_code": "200"
+                    "status_code": 400
                 })
         else:
             print("account number invalid")
             return jsonify({
                 "error": "invalid account number please try again with correct one",
-                "status_code": 200
+                "status_code": 400
             })
 
     except:
         print("Error in retreiving account number")
         return jsonify({
             "message": "error",
-            "status": 200
+            "status": 400
         })
 
 
@@ -387,23 +387,23 @@ def create_user():
                 except:
                     return jsonify({
                         "error": "Error updating deposit for your account in the ledger",
-                        "status_code": 200
+                        "status_code": 400
                     })
             except:
                 return jsonify({
                     "error": "Error updating balance in your new account",
-                    "status_code": 200
+                    "status_code": 400
                 })
 
         except:
             return jsonify({
                 "error": "There was some error in creating you account please try again later",
-                "status_code": 200
+                "status_code": 400
             })
     else:
         return jsonify({
             "error": "",
-            "status_code": 200
+            "status_code": 400
         })
 
 
@@ -432,12 +432,12 @@ def transfer():
     else:
         return jsonify({
             "error": "account_number_invalid",
-            "status_code": 200
+            "status_code": 400
         })
     if amount <= 0:
         return jsonify({
             "error": "transaction amount is equal to zero or less tham zero",
-            "status_code": 200
+            "status_code": 400
         })
     try:
         query = "SELECT balance FROM account_balance WHERE account_number = '{}'".format(your_account_number)
@@ -454,7 +454,7 @@ def transfer():
             except:
                 return jsonify({
                     "error": "error updating balance",
-                    "status_code": 200
+                    "status_code": 400
                 })
             try:
                 query = "UPDATE account_balance SET balance = balance + {} WHERE account_number = '{}'".format(
@@ -465,7 +465,7 @@ def transfer():
             except:
                 return jsonify({
                     "error": "error updating balance",
-                    "status_code": 200
+                    "status_code": 400
                 })
             new_balance = 0
             try:
@@ -475,7 +475,7 @@ def transfer():
             except:
                 return jsonify({
                     "error": "error selecting balance",
-                    "status_code": 200
+                    "status_code": 400
                 })
             try:
                 query = "INSERT INTO account_history(account_number, payment_type, balance_before, balance_afterwards, comments) values" \
@@ -490,7 +490,7 @@ def transfer():
             except:
                 return jsonify({
                     "error": "error creating transaction",
-                    "status_code": 200
+                    "status_code": 400
                 })
             try:
                 query = "INSERT INTO account_history(account_number, payment_type, balance_before, balance_afterwards, comments) values" \
@@ -505,17 +505,17 @@ def transfer():
             except:
                 return jsonify({
                     "error": "error updating balance",
-                    "status_code": 200
+                    "status_code": 400
                 })
             return jsonify({
                 "message": "transaction successfull",
                 "comments": "money successfully transfered",
-                "status_code": 200
+                "status_code": 400
             })
         else:
             return jsonify({
                 "error": "insufficient funds in your account please try again later",
-                "status_code": 200
+                "status_code": 400
             })
     except:
         print("Error in getting balance")
